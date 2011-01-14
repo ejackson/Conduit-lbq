@@ -107,35 +107,3 @@ used internally."
       (dorun (a-run handler-fn)))))
 
 ;; -----------------------------------------------------------------------------
-;; ------ Just for testing
-(comment
-  (def effect (atom []))
-  (defn side-effect [sink x]
-    (swap! sink conj x))
-
-  (def my-queue (create-queue))
-
-  ;; Just the lbq
-  (def my-tproc (a-lbq my-queue "gogo" (a-arr (partial side-effect effect))))
-  (def my-future (future (lbq-run my-tproc my-queue)))
-  (enqueue my-queue "gogo" 13)
-  (.cancel my-future true)
-  effect ;; Should be [13]
-  
-  ;; First through normal conduit
-  (def my-tproc (a-lbq my-queue "gogo" (a-arr (partial side-effect effect))))
-  (def my-future (future (lbq-run my-tproc my-queue)))
-  (def ow (a-comp (a-arr identity) my-tproc))
-  (conduit-map ow [1 2 3])
-  (.cancel my-future true)
-  effect ;; [13 1 2 3]
-  
-  ;; Now starting with the lbq --- Dunno how to compose !
-  (def my-tproc (a-lbq my-queue "gogo" (a-arr identity)))
-  (def my-future (future (lbq-run my-tproc my-queue)))
-
-  (def t (a-comp my-tproc (a-arr (partial side-effect effect))))
-  (enqueue my-queue "gogo" 101)
-  (.cancel my-future true)
-  effect  ;; nada
-  )
